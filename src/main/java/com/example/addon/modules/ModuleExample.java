@@ -8,8 +8,9 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.orbit.EventHandler;
+
+import net.minecraft.world.inventory.ClickType;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -51,16 +52,18 @@ public class ModuleExample extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (!active.get() || Utils.mc.player == null || Utils.mc.world == null) return;
+        // MOJMAP: Dung mc.level thay vi mc.world
+        if (!active.get() || mc.player == null || mc.level == null) return;
 
         if (timer > 0) {
             timer--;
             return;
         }
 
-        if (Utils.mc.currentScreen != null && Utils.mc.player.currentScreenHandler != null) {
-            var handler = Utils.mc.player.currentScreenHandler;
-            int totalSlots = handler.slots.size();
+        // MOJMAP: mc.screen va mc.player.containerMenu
+        if (mc.screen != null && mc.player.containerMenu != null) {
+            var menu = mc.player.containerMenu;
+            int totalSlots = menu.slots.size();
 
             if (totalSlots > 36) {
                 int containerSlots = totalSlots - 36;
@@ -70,7 +73,8 @@ public class ModuleExample extends Module {
                 String[] targets = targetItems.get().toLowerCase().split(",");
 
                 for (int i = 0; i < containerSlots; i++) {
-                    var stack = handler.getSlot(i).getStack();
+                    // MOJMAP: getItem() thay vi getStack()
+                    var stack = menu.getSlot(i).getItem();
                     if (!stack.isEmpty()) {
                         String itemName = stack.getItem().toString().toLowerCase();
                         
@@ -95,36 +99,27 @@ public class ModuleExample extends Module {
                 if (uniqueItemTypes.size() == 1 && containsTargetItem) {
                     int dropAllButtonSlot = 53;
                     
-                    if (dropAllButtonSlot < totalSlots) {
-                        try {
-                            var interactionManager = Utils.mc.interactionManager;
-                            if (interactionManager != null) {
-                                for (var method : interactionManager.getClass().getDeclaredMethods()) {
-                                    if (method.getParameterCount() == 5) {
-                                        method.setAccessible(true);
-                                        Object slotActionTypePickup = method.getParameterTypes()[3].getEnumConstants()[0];
-                                        method.invoke(interactionManager, handler.syncId, dropAllButtonSlot, 0, slotActionTypePickup, Utils.mc.player);
-                                        break;
-                                    }
-                                }
-                            }
-                        } catch (Exception ignored) {}
+                    // MOJMAP: mc.gameMode thay vi mc.interactionManager
+                    if (dropAllButtonSlot < totalSlots && mc.gameMode != null) {
+                        // Click nut vut het
+                        mc.gameMode.handleInventoryMouseClick(menu.containerId, dropAllButtonSlot, 0, ClickType.PICKUP, mc.player);
                     }
 
-                    // Dong GUI
-                    Utils.mc.player.closeHandledScreen();
+                    // MOJMAP: closeContainer() thay vi closeHandledScreen()
+                    mc.player.closeContainer();
 
-                    // Re-open Spawner
-                    if (Utils.mc.options != null && Utils.mc.options.useKey != null) {
-                        Utils.mc.options.useKey.setPressed(true);
+                    // MOJMAP: mc.options.keyUse.setDown(true) thay vi mc.options.useKey.setPressed(true)
+                    if (mc.options != null && mc.options.keyUse != null) {
+                        mc.options.keyUse.setDown(true);
                     }
 
                     timer = delay.get();
                 }
             }
         } else {
-            if (Utils.mc.options != null && Utils.mc.options.useKey != null && Utils.mc.options.useKey.isPressed()) {
-                Utils.mc.options.useKey.setPressed(false);
+            // MOJMAP: keyUse.isDown() va keyUse.setDown(false)
+            if (mc.options != null && mc.options.keyUse != null && mc.options.keyUse.isDown()) {
+                mc.options.keyUse.setDown(false);
             }
         }
     }
