@@ -16,6 +16,7 @@ import java.util.Set;
 public class ModuleExample extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
+    // 1. Menu Cong tac Bat/Tat
     private final Setting<Boolean> active = sgGeneral.add(new BoolSetting.Builder()
         .name("active")
         .description("Kich hoat tu dong xa Spawner KingMC.")
@@ -23,6 +24,7 @@ public class ModuleExample extends Module {
         .build()
     );
 
+    // 2. Menu Nhap Danh sach Vat pham
     private final Setting<String> targetItems = sgGeneral.add(new StringSetting.Builder()
         .name("target-items")
         .description("Vat pham xet duyet full trang (vi du: bone, iron_ingot).")
@@ -30,6 +32,7 @@ public class ModuleExample extends Module {
         .build()
     );
 
+    // 3. Menu Chinh Time Delay
     private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
         .name("delay-ticks")
         .description("Thoi gian hoan giua cac thao tac (tick).")
@@ -54,12 +57,10 @@ public class ModuleExample extends Module {
             return;
         }
 
-        // Kiem tra GUI dang mo
         if (mc.currentScreen != null && mc.player.currentScreenHandler != null) {
             var handler = mc.player.currentScreenHandler;
             int totalSlots = handler.slots.size();
 
-            // Rương/GUI spawner thuong co > 36 slots
             if (totalSlots > 36) {
                 int containerSlots = totalSlots - 36;
                 
@@ -72,7 +73,6 @@ public class ModuleExample extends Module {
                     if (!stack.isEmpty()) {
                         String itemName = stack.getItem().toString().toLowerCase();
                         
-                        // Bo qua cac o kinh barrier, nut bam GUI
                         if (itemName.contains("glass") || itemName.contains("dispenser") || itemName.contains("emerald") || itemName.contains("arrow")) {
                             continue;
                         }
@@ -89,30 +89,23 @@ public class ModuleExample extends Module {
                     }
                 }
 
-                // Chi co 1 loại item va nam trong danh sach target
                 if (uniqueItemTypes.size() == 1 && containsTargetItem) {
-                    int dropAllButtonSlot = 53; // Vi tri nut Vut Het
+                    int dropAllButtonSlot = 53;
                     
                     if (dropAllButtonSlot < totalSlots) {
-                        // Click nut Vut Het thong qua Slot Click ID
                         mc.interactionManager.clickButton(handler.syncId, dropAllButtonSlot);
                     }
 
-                    // Dong GUI
                     mc.player.closeHandledScreen();
 
-                    // Mở lại khối Spawner đang nhìn vào
-                    if (mc.crosshairTarget != null) {
-                        mc.interactionManager.// Dong GUI
-mc.player.closeHandledScreen();
-
-// Re-open Spawner (Dùng phím Use / Chuột phải tự động)
-mc.options.useKey.setPressed(true);
-
+                    // Simulates right-click action securely
+                    mc.options.useKey.setPressed(true);
 
                     timer = delay.get();
                 }
             }
+        } else {
+            mc.options.useKey.setPressed(false);
         }
     }
 }
