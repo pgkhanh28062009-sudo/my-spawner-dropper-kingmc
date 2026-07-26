@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.fabric.loom)
-    alias(libs.plugins.meteor.addon)
+    id("meteordevelopment.meteor-addon") version "1.5.0"
+
 }
 
 version = project.property("mod_version") as String
