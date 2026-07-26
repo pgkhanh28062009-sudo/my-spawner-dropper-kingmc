@@ -10,10 +10,6 @@ import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 
-import net.minecraft.screen.slot.SlotActionType;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,16 +47,16 @@ public class ModuleExample extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (!active.get() || mc.player == null || mc.world == null) return;
+        if (!active.get() || mc.player == null || mc.level == null) return;
 
         if (timer > 0) {
             timer--;
             return;
         }
 
-        if (mc.currentScreen != null && mc.player.currentScreenHandler != null) {
-            var handler = mc.player.currentScreenHandler;
-            int totalSlots = handler.slots.size();
+        if (mc.screen != null && mc.player.containerMenu != null) {
+            var menu = mc.player.containerMenu;
+            int totalSlots = menu.slots.size();
 
             if (totalSlots > 36) {
                 int containerSlots = totalSlots - 36;
@@ -70,11 +66,11 @@ public class ModuleExample extends Module {
                 String[] targets = targetItems.get().toLowerCase().split(",");
 
                 for (int i = 0; i < containerSlots; i++) {
-                    var stack = handler.getSlot(i).getStack();
+                    var stack = menu.getSlot(i).getItem();
                     if (!stack.isEmpty()) {
-                        String itemName = stack.getItem().getTranslationKey().toLowerCase();
+                        String itemName = stack.getItem().toString().toLowerCase();
                         
-                        // Bo qua cac o nut bam GUI
+                        // Bo qua cac o nut GUI
                         if (itemName.contains("glass") || itemName.contains("dispenser") || itemName.contains("emerald") || itemName.contains("arrow")) {
                             continue;
                         }
@@ -91,17 +87,31 @@ public class ModuleExample extends Module {
                     }
                 }
 
-                // Khi trang chi chua 1 loai vat pham duy nhat va la target
+                // Khi trang chi chua 1 loai vat pham duy nhat va thuoc danh sach target
                 if (uniqueItemTypes.size() == 1 && containsTargetItem) {
                     int dropAllButtonSlot = 53;
-                    if (dropAllButtonSlot < totalSlots) {
-                        mc.interactionManager.clickSlot(handler.syncId, dropAllButtonSlot, 0, SlotActionType.PICKUP, mc.player);
+                    
+                    // Click Drop All bang API qua ScreenHandler/ContainerMenu
+                    if (dropAllButtonSlot < totalSlots && mc.gameMode != null) {
+                        try {
+                            // Dung ClickSlot theo kieu Minecraft Official Mappings
+                            mc.gameMode.handleInventoryMouseClick(menu.containerId, dropAllButtonSlot, 0, net.minecraft.world.inventory.ClickType.PICKUP, mc.player);
+                        } catch (Throwable ignored) {
+                            // Backup neu mapping Fabric
+                            try {
+                                mc.interactionManager.clickSlot(menu.containerId, dropAllButtonSlot, 0, net.minecraft.screen.slot.SlotActionType.PICKUP, mc.player);
+                            } catch (Throwable ignored2) {}
+                        }
                     }
 
-                    mc.player.closeHandledScreen();
+                    // Dong GUI
+                    mc.player.closeContainer();
 
-                    if (mc.crosshairTarget instanceof BlockHitResult blockHit) {
-                        mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHit);
+                    // Re-open Spawner
+                    if (mc.hitResult instanceof net.minecraft.world.phys.BlockHitResult blockHit) {
+                        mc.gameMode.useItemOn(mc.player, net.minecraft.world.InteractionHand.MAIN_HAND, blockHit);
+                    } else if (mc.crosshairTarget instanceof net.minecraft.util.hit.BlockHitResult blockHit) {
+                        mc.interactionManager.interactBlock(mc.player, net.minecraft.util.Hand.MAIN_HAND, blockHit);
                     }
 
                     timer = delay.get();
