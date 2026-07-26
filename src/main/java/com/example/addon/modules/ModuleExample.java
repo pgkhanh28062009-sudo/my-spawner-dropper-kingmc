@@ -10,6 +10,10 @@ import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 
+import net.minecraft.screen.slot.SlotActionType;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -42,8 +46,8 @@ public class ModuleExample extends Module {
     private int timer = 0;
 
     public ModuleExample() {
-    super(Category.MISC, "spawner-dropper", "Tu dong Vut Het & Re-open Spawner khi Full 1 loai do.");
-}
+        super(Category.MISC, "spawner-dropper", "Tu dong Vut Het & Re-open Spawner khi Full 1 loai do.");
+    }
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
@@ -87,20 +91,17 @@ public class ModuleExample extends Module {
                     }
                 }
 
-                // Neu trang CHI CO DU NG 1 LOAI DO va la do muc tieu
+                // Khi trang chi chua 1 loai vat pham duy nhat va la target
                 if (uniqueItemTypes.size() == 1 && containsTargetItem) {
-                    int dropAllButtonSlot = 53; // Slot 53 nut Vut Het
+                    int dropAllButtonSlot = 53;
                     if (dropAllButtonSlot < totalSlots) {
-                        // Dung API nhap chuot bang SlotActionType ordinals
-                        mc.interactionManager.clickSlot(handler.syncId, dropAllButtonSlot, 0, net.minecraft.screen.slot.SlotActionType.PICKUP, mc.player);
+                        mc.interactionManager.clickSlot(handler.syncId, dropAllButtonSlot, 0, SlotActionType.PICKUP, mc.player);
                     }
 
-                    // Dong GUI
                     mc.player.closeHandledScreen();
 
-                    // Tu dong phai chuột lai vao khoi truoc mat de mo lai Spawner
-                    if (mc.crosshairTarget instanceof net.minecraft.util.hit.BlockHitResult blockHit) {
-                        mc.interactionManager.interactBlock(mc.player, net.minecraft.util.Hand.MAIN_HAND, blockHit);
+                    if (mc.crosshairTarget instanceof BlockHitResult blockHit) {
+                        mc.interactionManager.interactBlock(mc.player, Hand.MAIN_HAND, blockHit);
                     }
 
                     timer = delay.get();
