@@ -32,3 +32,8 @@ jobs:
           prerelease: true
           files: |
             ./build/libs/*.jar
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spawner-dropper-addon
+          path: build/libs/*.jar
