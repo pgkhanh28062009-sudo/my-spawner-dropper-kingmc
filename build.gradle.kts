@@ -1,19 +1,6 @@
-pluginManagement {
-    repositories {
-        maven("https://maven.meteorclient.com/")
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
 plugins {
     id("meteordevelopment.meteor-addon") version "1.5.0"
     alias(libs.plugins.fabric.loom)
-}
-plugins {
-    alias(libs.plugins.fabric.loom)
-    id("meteordevelopment.meteor-addon") version "1.5.0"
-
 }
 
 version = project.property("mod_version") as String
@@ -27,7 +14,7 @@ repositories {
 dependencies {
     minecraft(libs.minecraft)
     implementation(libs.fabric.loader)
-    implementation(libs.meteor.client)
+    implementation(libs.meteor-client)
 }
 
 java {
