@@ -1,8 +1,9 @@
 pluginManagement {
     repositories {
+        maven("https://maven.fabricmc.net/")
         maven("https://maven.meteorclient.com/")
-        gradlePluginPortal()
         mavenCentral()
+        gradlePluginPortal()
     }
 }
 
