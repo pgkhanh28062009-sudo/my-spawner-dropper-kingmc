@@ -103,8 +103,12 @@ public class ModuleExample extends Module {
 
                     // Mở lại khối Spawner đang nhìn vào
                     if (mc.crosshairTarget != null) {
-                        mc.interactionManager.interactBlock(mc.player, net.minecraft.util.Hand.MAIN_HAND, (net.minecraft.util.hit.BlockHitResult) mc.crosshairTarget);
-                    }
+                        mc.interactionManager.// Dong GUI
+mc.player.closeHandledScreen();
+
+// Re-open Spawner (Dùng phím Use / Chuột phải tự động)
+mc.options.useKey.setPressed(true);
+
 
                     timer = delay.get();
                 }
