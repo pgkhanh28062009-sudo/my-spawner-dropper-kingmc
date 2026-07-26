@@ -1,30 +1,19 @@
 plugins {
     alias(libs.plugins.fabric.loom)
+    alias(libs.plugins.meteor.addon)
 }
 
-base {
-    archivesName = properties["archives_base_name"] as String
-    version = libs.versions.mod.version.get()
-    group = properties["maven_group"] as String
-}
+version = project.property("mod_version") as String
+group = project.property("maven_group") as String
 
 repositories {
-    maven {
-        name = "meteor-maven"
-        url = uri("https://maven.meteordev.org/releases")
-    }
-    maven {
-        name = "meteor-maven-snapshots"
-        url = uri("https://maven.meteordev.org/snapshots")
-    }
+    maven("https://maven.meteorclient.com/")
+    maven("https://repo.spongepowered.org/repository/maven-public/")
 }
 
 dependencies {
-    // Fabric
     minecraft(libs.minecraft)
     implementation(libs.fabric.loader)
-
-    // Meteor
     implementation(libs.meteor.client)
 }
 
@@ -47,11 +36,6 @@ tasks {
             expand(propertyMap)
         }
     }
-}
-
-            expand(propertyMap)
-        }
-    }
 
     jar {
         inputs.property("archivesName", project.base.archivesName.get())
@@ -60,13 +44,13 @@ tasks {
             rename { "${it}_${inputs.properties["archivesName"]}" }
         }
     }
+}
 
-    withType<JavaCompile>().configureEach {
-        options.compilerArgs.addAll(
-            listOf(
-                "-Xlint:deprecation",
-                "-Xlint:unchecked"
-            )
+withType<JavaCompile>().configureEach {
+    options.compilerArgs.addAll(
+        listOf(
+            "-Xlint:deprecation",
+            "-Xlint:unchecked"
         )
-    }
+    )
 }
