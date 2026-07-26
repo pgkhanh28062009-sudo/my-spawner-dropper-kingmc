@@ -10,6 +10,8 @@ import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 
+import net.minecraft.client.MinecraftClient;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -50,15 +52,17 @@ public class ModuleExample extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (!active.get() || mc.player == null || mc.world == null) return;
+        MinecraftClient client = MinecraftClient.getInstance();
+
+        if (!active.get() || client.player == null || client.world == null) return;
 
         if (timer > 0) {
             timer--;
             return;
         }
 
-        if (mc.currentScreen != null && mc.player.currentScreenHandler != null) {
-            var handler = mc.player.currentScreenHandler;
+        if (client.currentScreen != null && client.player.currentScreenHandler != null) {
+            var handler = client.player.currentScreenHandler;
             int totalSlots = handler.slots.size();
 
             if (totalSlots > 36) {
@@ -95,17 +99,14 @@ public class ModuleExample extends Module {
                     int dropAllButtonSlot = 53;
                     
                     if (dropAllButtonSlot < totalSlots) {
-                        // Click Slot 53 dung Reflection / Native Client Interaction (Khong can import SlotActionType)
                         try {
-                            var interactionManager = mc.interactionManager;
+                            var interactionManager = client.interactionManager;
                             if (interactionManager != null) {
-                                // Dynamic invoke slot click
                                 for (var method : interactionManager.getClass().getDeclaredMethods()) {
                                     if (method.getParameterCount() == 5) {
                                         method.setAccessible(true);
-                                        // Invoking clickSlot via reflection to bypass mapping differences
                                         Object slotActionTypePickup = method.getParameterTypes()[3].getEnumConstants()[0];
-                                        method.invoke(interactionManager, handler.syncId, dropAllButtonSlot, 0, slotActionTypePickup, mc.player);
+                                        method.invoke(interactionManager, handler.syncId, dropAllButtonSlot, 0, slotActionTypePickup, client.player);
                                         break;
                                     }
                                 }
@@ -114,19 +115,19 @@ public class ModuleExample extends Module {
                     }
 
                     // Dong GUI
-                    mc.player.closeHandledScreen();
+                    client.player.closeHandledScreen();
 
-                    // Mo lai Spawner bang cach nhap giu nut dung (chuot phai)
-                    if (mc.options != null && mc.options.useKey != null) {
-                        mc.options.useKey.setPressed(true);
+                    // Mo lai Spawner
+                    if (client.options != null && client.options.useKey != null) {
+                        client.options.useKey.setPressed(true);
                     }
 
                     timer = delay.get();
                 }
             }
         } else {
-            if (mc.options != null && mc.options.useKey != null && mc.options.useKey.isPressed()) {
-                mc.options.useKey.setPressed(false);
+            if (client.options != null && client.options.useKey != null && client.options.useKey.isPressed()) {
+                client.options.useKey.setPressed(false);
             }
         }
     }
