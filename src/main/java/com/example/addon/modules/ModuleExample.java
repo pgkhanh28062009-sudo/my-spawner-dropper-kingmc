@@ -10,7 +10,7 @@ import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 
-import net.minecraft.world.inventory.ClickType;
+import net.minecraft.client.Minecraft;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -52,7 +52,9 @@ public class ModuleExample extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        // MOJMAP: Dung mc.level thay vi mc.world
+        // KHAI BAO BIEU DIEN MC CHUAN MOJMAP
+        Minecraft mc = Minecraft.getInstance();
+
         if (!active.get() || mc.player == null || mc.level == null) return;
 
         if (timer > 0) {
@@ -60,7 +62,6 @@ public class ModuleExample extends Module {
             return;
         }
 
-        // MOJMAP: mc.screen va mc.player.containerMenu
         if (mc.screen != null && mc.player.containerMenu != null) {
             var menu = mc.player.containerMenu;
             int totalSlots = menu.slots.size();
@@ -73,7 +74,6 @@ public class ModuleExample extends Module {
                 String[] targets = targetItems.get().toLowerCase().split(",");
 
                 for (int i = 0; i < containerSlots; i++) {
-                    // MOJMAP: getItem() thay vi getStack()
                     var stack = menu.getSlot(i).getItem();
                     if (!stack.isEmpty()) {
                         String itemName = stack.getItem().toString().toLowerCase();
@@ -99,16 +99,24 @@ public class ModuleExample extends Module {
                 if (uniqueItemTypes.size() == 1 && containsTargetItem) {
                     int dropAllButtonSlot = 53;
                     
-                    // MOJMAP: mc.gameMode thay vi mc.interactionManager
                     if (dropAllButtonSlot < totalSlots && mc.gameMode != null) {
-                        // Click nut vut het
-                        mc.gameMode.handleInventoryMouseClick(menu.containerId, dropAllButtonSlot, 0, ClickType.PICKUP, mc.player);
+                        // Dung Reflection de click, bo qua hoan toan viec import ClickType gay loi
+                        try {
+                            for (var method : mc.gameMode.getClass().getDeclaredMethods()) {
+                                if (method.getParameterCount() == 5) {
+                                    method.setAccessible(true);
+                                    Object clickTypePickup = method.getParameterTypes()[3].getEnumConstants()[0];
+                                    method.invoke(mc.gameMode, menu.containerId, dropAllButtonSlot, 0, clickTypePickup, mc.player);
+                                    break;
+                                }
+                            }
+                        } catch (Exception ignored) {}
                     }
 
-                    // MOJMAP: closeContainer() thay vi closeHandledScreen()
+                    // Dong GUI
                     mc.player.closeContainer();
 
-                    // MOJMAP: mc.options.keyUse.setDown(true) thay vi mc.options.useKey.setPressed(true)
+                    // Mo lai Spawner (Mojmap dung keyUse)
                     if (mc.options != null && mc.options.keyUse != null) {
                         mc.options.keyUse.setDown(true);
                     }
@@ -117,7 +125,6 @@ public class ModuleExample extends Module {
                 }
             }
         } else {
-            // MOJMAP: keyUse.isDown() va keyUse.setDown(false)
             if (mc.options != null && mc.options.keyUse != null && mc.options.keyUse.isDown()) {
                 mc.options.keyUse.setDown(false);
             }
