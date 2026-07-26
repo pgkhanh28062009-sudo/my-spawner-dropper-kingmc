@@ -13,7 +13,7 @@ import meteordevelopment.orbit.EventHandler;
 import java.util.HashSet;
 import java.util.Set;
 
-public class SpawnerDropper extends Module {
+public class ModuleExample extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
     private final Setting<Boolean> active = sgGeneral.add(new BoolSetting.Builder()
@@ -41,9 +41,9 @@ public class SpawnerDropper extends Module {
 
     private int timer = 0;
 
-    public SpawnerDropper(Category category) {
-        super(category, "spawner-dropper", "Tu dong Vut Het & Re-open Spawner khi Full 1 loai do.");
-    }
+    public ModuleExample() {
+    super(Category.MISC, "spawner-dropper", "Tu dong Vut Het & Re-open Spawner khi Full 1 loai do.");
+}
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
