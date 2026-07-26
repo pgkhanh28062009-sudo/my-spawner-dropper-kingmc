@@ -1,16 +1,14 @@
 package com.example.addon.modules;
 
+import com.example.addon.AddonTemplate;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.IntSetting;
 import meteordevelopment.meteorclient.settings.StringSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
-
-import net.minecraft.client.Minecraft;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -47,24 +45,23 @@ public class ModuleExample extends Module {
     private int timer = 0;
 
     public ModuleExample() {
-        super(Category.MISC, "spawner-dropper", "Tu dong Vut Het & Re-open Spawner khi Full 1 loai do.");
+        // ĐÃ FIX L50: Trả lại AddonTemplate.CATEGORY chuẩn của project bạn
+        super(AddonTemplate.CATEGORY, "spawner-dropper", "Tu dong Vut Het & Re-open Spawner khi Full 1 loai do.");
     }
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        // KHAI BAO BIEU DIEN MC CHUAN MOJMAP
-        Minecraft mc = Minecraft.getInstance();
-
-        if (!active.get() || mc.player == null || mc.level == null) return;
+        // Dùng biến mc có sẵn của hệ thống Meteor Module
+        if (!active.get() || mc.player == null || mc.world == null) return;
 
         if (timer > 0) {
             timer--;
             return;
         }
 
-        if (mc.screen != null && mc.player.containerMenu != null) {
-            var menu = mc.player.containerMenu;
-            int totalSlots = menu.slots.size();
+        if (mc.currentScreen != null && mc.player.currentScreenHandler != null) {
+            var handler = mc.player.currentScreenHandler;
+            int totalSlots = handler.slots.size();
 
             if (totalSlots > 36) {
                 int containerSlots = totalSlots - 36;
@@ -74,7 +71,7 @@ public class ModuleExample extends Module {
                 String[] targets = targetItems.get().toLowerCase().split(",");
 
                 for (int i = 0; i < containerSlots; i++) {
-                    var stack = menu.getSlot(i).getItem();
+                    var stack = handler.getSlot(i).getStack();
                     if (!stack.isEmpty()) {
                         String itemName = stack.getItem().toString().toLowerCase();
                         
@@ -99,35 +96,39 @@ public class ModuleExample extends Module {
                 if (uniqueItemTypes.size() == 1 && containsTargetItem) {
                     int dropAllButtonSlot = 53;
                     
-                    if (dropAllButtonSlot < totalSlots && mc.gameMode != null) {
-                        // Dung Reflection de click, bo qua hoan toan viec import ClickType gay loi
+                    if (dropAllButtonSlot < totalSlots) {
+                        // FIX LỖI IMPORT BẰNG REFLECTION THUẦN TÚY
                         try {
-                            for (var method : mc.gameMode.getClass().getDeclaredMethods()) {
-                                if (method.getParameterCount() == 5) {
-                                    method.setAccessible(true);
-                                    Object clickTypePickup = method.getParameterTypes()[3].getEnumConstants()[0];
-                                    method.invoke(mc.gameMode, menu.containerId, dropAllButtonSlot, 0, clickTypePickup, mc.player);
-                                    break;
+                            var interactionManager = mc.interactionManager;
+                            if (interactionManager != null) {
+                                for (var method : interactionManager.getClass().getDeclaredMethods()) {
+                                    if (method.getParameterCount() == 5) {
+                                        method.setAccessible(true);
+                                        Object clickTypePickup = method.getParameterTypes()[3].getEnumConstants()[0];
+                                        method.invoke(interactionManager, handler.syncId, dropAllButtonSlot, 0, clickTypePickup, mc.player);
+                                        break;
+                                    }
                                 }
                             }
                         } catch (Exception ignored) {}
                     }
 
                     // Dong GUI
-                    mc.player.closeContainer();
+                    mc.player.closeHandledScreen();
 
-                    // Mo lai Spawner (Mojmap dung keyUse)
-                    if (mc.options != null && mc.options.keyUse != null) {
-                        mc.options.keyUse.setDown(true);
+                    // Mo lai Spawner
+                    if (mc.options != null && mc.options.useKey != null) {
+                        mc.options.useKey.setPressed(true);
                     }
 
                     timer = delay.get();
                 }
             }
         } else {
-            if (mc.options != null && mc.options.keyUse != null && mc.options.keyUse.isDown()) {
-                mc.options.keyUse.setDown(false);
+            if (mc.options != null && mc.options.useKey != null && mc.options.useKey.isPressed()) {
+                mc.options.useKey.setPressed(false);
             }
         }
     }
 }
+
