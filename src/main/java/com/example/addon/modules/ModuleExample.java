@@ -1,66 +1,111 @@
 package com.example.addon.modules;
 
-import com.example.addon.AddonTemplate;
-import meteordevelopment.meteorclient.events.render.Render3DEvent;
-import meteordevelopment.meteorclient.renderer.ShapeMode;
-import meteordevelopment.meteorclient.settings.ColorSetting;
-import meteordevelopment.meteorclient.settings.DoubleSetting;
+import meteordevelopment.meteorclient.events.world.TickEvent;
+import meteordevelopment.meteorclient.settings.BoolSetting;
+import meteordevelopment.meteorclient.settings.IntSetting;
+import meteordevelopment.meteorclient.settings.StringSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
+import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Module;
-import meteordevelopment.meteorclient.utils.render.color.Color;
-import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.AABB;
 
-public class ModuleExample extends Module {
-    private final SettingGroup sgGeneral = this.settings.getDefaultGroup();
-    private final SettingGroup sgRender = this.settings.createGroup("Render");
+import java.util.HashSet;
+import java.util.Set;
 
-    /**
-     * Example setting.
-     * The {@code name} parameter should be in kebab-case.
-     * If you want to access the setting from another class, simply make the setting {@code public}, and use
-     * {@link meteordevelopment.meteorclient.systems.modules.Modules#get(Class)} to access the {@link Module} object.
-     */
-    private final Setting<Double> scale = sgGeneral.add(new DoubleSetting.Builder()
-        .name("scale")
-        .description("The size of the marker.")
-        .defaultValue(2.0d)
-        .range(0.5d, 10.0d)
+public class SpawnerDropper extends Module {
+    private final SettingGroup sgGeneral = settings.getDefaultGroup();
+
+    private final Setting<Boolean> active = sgGeneral.add(new BoolSetting.Builder()
+        .name("active")
+        .description("Kich hoat tu dong xa Spawner KingMC.")
+        .defaultValue(true)
         .build()
     );
 
-    private final Setting<SettingColor> color = sgRender.add(new ColorSetting.Builder()
-        .name("color")
-        .description("The color of the marker.")
-        .defaultValue(Color.MAGENTA)
+    private final Setting<String> targetItems = sgGeneral.add(new StringSetting.Builder()
+        .name("target-items")
+        .description("Vat pham xet duyet full trang (vi du: bone, iron_ingot).")
+        .defaultValue("bone, iron_ingot, blaze_rod, gunpowder")
         .build()
     );
 
-    /**
-     * The {@code name} parameter should be in kebab-case.
-     */
-    public ModuleExample() {
-        super(AddonTemplate.CATEGORY, "world-origin", "An example module that highlights the center of the world.");
+    private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
+        .name("delay-ticks")
+        .description("Thoi gian hoan giua cac thao tac (tick).")
+        .defaultValue(5)
+        .min(1)
+        .sliderMax(20)
+        .build()
+    );
+
+    private int timer = 0;
+
+    public SpawnerDropper(Category category) {
+        super(category, "spawner-dropper", "Tu dong Vut Het & Re-open Spawner khi Full 1 loai do.");
     }
 
-    /**
-     * Example event handling method.
-     * Requires {@link AddonTemplate#getPackage()} to be setup correctly, otherwise the game will crash whenever the module is enabled.
-     */
     @EventHandler
-    private void onRender3d(Render3DEvent event) {
-        // Create & expand the marker object
-        AABB marker = new AABB(BlockPos.ZERO);
-        marker = marker.expandTowards(
-            scale.get() * marker.getXsize(),
-            scale.get() * marker.getYsize(),
-            scale.get() * marker.getZsize()
-        );
+    private void onTick(TickEvent.Pre event) {
+        if (!active.get() || mc.player == null || mc.world == null) return;
 
-        // Render the marker based on the color setting
-        event.renderer.box(marker, color.get(), color.get(), ShapeMode.Both, 0);
+        if (timer > 0) {
+            timer--;
+            return;
+        }
+
+        if (mc.currentScreen != null && mc.player.currentScreenHandler != null) {
+            var handler = mc.player.currentScreenHandler;
+            int totalSlots = handler.slots.size();
+
+            if (totalSlots > 36) {
+                int containerSlots = totalSlots - 36;
+                
+                Set<String> uniqueItemTypes = new HashSet<>();
+                boolean containsTargetItem = false;
+                String[] targets = targetItems.get().toLowerCase().split(",");
+
+                for (int i = 0; i < containerSlots; i++) {
+                    var stack = handler.getSlot(i).getStack();
+                    if (!stack.isEmpty()) {
+                        String itemName = stack.getItem().getTranslationKey().toLowerCase();
+                        
+                        // Bo qua cac o nut bam GUI
+                        if (itemName.contains("glass") || itemName.contains("dispenser") || itemName.contains("emerald") || itemName.contains("arrow")) {
+                            continue;
+                        }
+
+                        uniqueItemTypes.add(itemName);
+
+                        for (String target : targets) {
+                            String clean = target.trim();
+                            if (!clean.isEmpty() && itemName.contains(clean)) {
+                                containsTargetItem = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Neu trang CHI CO DU NG 1 LOAI DO va la do muc tieu
+                if (uniqueItemTypes.size() == 1 && containsTargetItem) {
+                    int dropAllButtonSlot = 53; // Slot 53 nut Vut Het
+                    if (dropAllButtonSlot < totalSlots) {
+                        // Dung API nhap chuot bang SlotActionType ordinals
+                        mc.interactionManager.clickSlot(handler.syncId, dropAllButtonSlot, 0, net.minecraft.screen.slot.SlotActionType.PICKUP, mc.player);
+                    }
+
+                    // Dong GUI
+                    mc.player.closeHandledScreen();
+
+                    // Tu dong phai chuột lai vao khoi truoc mat de mo lai Spawner
+                    if (mc.crosshairTarget instanceof net.minecraft.util.hit.BlockHitResult blockHit) {
+                        mc.interactionManager.interactBlock(mc.player, net.minecraft.util.Hand.MAIN_HAND, blockHit);
+                    }
+
+                    timer = delay.get();
+                }
+            }
+        }
     }
 }
