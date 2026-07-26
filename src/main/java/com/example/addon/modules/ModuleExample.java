@@ -8,9 +8,8 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Module;
+import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.orbit.EventHandler;
-
-import net.minecraft.client.MinecraftClient;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -52,17 +51,15 @@ public class ModuleExample extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        MinecraftClient client = MinecraftClient.getInstance();
-
-        if (!active.get() || client.player == null || client.world == null) return;
+        if (!active.get() || Utils.mc.player == null || Utils.mc.world == null) return;
 
         if (timer > 0) {
             timer--;
             return;
         }
 
-        if (client.currentScreen != null && client.player.currentScreenHandler != null) {
-            var handler = client.player.currentScreenHandler;
+        if (Utils.mc.currentScreen != null && Utils.mc.player.currentScreenHandler != null) {
+            var handler = Utils.mc.player.currentScreenHandler;
             int totalSlots = handler.slots.size();
 
             if (totalSlots > 36) {
@@ -100,13 +97,13 @@ public class ModuleExample extends Module {
                     
                     if (dropAllButtonSlot < totalSlots) {
                         try {
-                            var interactionManager = client.interactionManager;
+                            var interactionManager = Utils.mc.interactionManager;
                             if (interactionManager != null) {
                                 for (var method : interactionManager.getClass().getDeclaredMethods()) {
                                     if (method.getParameterCount() == 5) {
                                         method.setAccessible(true);
                                         Object slotActionTypePickup = method.getParameterTypes()[3].getEnumConstants()[0];
-                                        method.invoke(interactionManager, handler.syncId, dropAllButtonSlot, 0, slotActionTypePickup, client.player);
+                                        method.invoke(interactionManager, handler.syncId, dropAllButtonSlot, 0, slotActionTypePickup, Utils.mc.player);
                                         break;
                                     }
                                 }
@@ -115,19 +112,19 @@ public class ModuleExample extends Module {
                     }
 
                     // Dong GUI
-                    client.player.closeHandledScreen();
+                    Utils.mc.player.closeHandledScreen();
 
-                    // Mo lai Spawner
-                    if (client.options != null && client.options.useKey != null) {
-                        client.options.useKey.setPressed(true);
+                    // Re-open Spawner
+                    if (Utils.mc.options != null && Utils.mc.options.useKey != null) {
+                        Utils.mc.options.useKey.setPressed(true);
                     }
 
                     timer = delay.get();
                 }
             }
         } else {
-            if (client.options != null && client.options.useKey != null && client.options.useKey.isPressed()) {
-                client.options.useKey.setPressed(false);
+            if (Utils.mc.options != null && Utils.mc.options.useKey != null && Utils.mc.options.useKey.isPressed()) {
+                Utils.mc.options.useKey.setPressed(false);
             }
         }
     }
