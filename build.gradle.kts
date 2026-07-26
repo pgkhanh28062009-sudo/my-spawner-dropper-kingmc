@@ -11,9 +11,11 @@ base {
 }
 
 repositories {
-    maven("https://maven.meteorclient.com/")
-    maven("https://repo.spongepowered.org/repository/maven-public/")
     mavenCentral()
+    maven("https://maven.fabricmc.net/")
+    maven("https://maven.meteordev.org/releases")
+    maven("https://maven.meteordev.org/snapshots")
+    maven("https://repo.spongepowered.org/repository/maven-public/")
 }
 
 dependencies {
