@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "1.9.23"
     id("fabric-loom") version "1.6-SNAPSHOT"
+    java
 }
 
 version = project.property("mod_version") as String
