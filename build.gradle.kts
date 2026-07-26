@@ -38,13 +38,17 @@ tasks {
     processResources {
         val propertyMap = mapOf(
             "version" to project.version,
-            ""minecraft_version" to libs.versions.minecraft.get()
-
-            "jdk_version" to libs.versions.jdk.get(),
+            "minecraft_version" to libs.versions.minecraft.get(),
+            "jdk_version" to libs.versions.jdk.get()
         )
 
         inputs.properties(propertyMap)
         filesMatching("fabric.mod.json") {
+            expand(propertyMap)
+        }
+    }
+}
+
             expand(propertyMap)
         }
     }
