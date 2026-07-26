@@ -16,7 +16,6 @@ import java.util.Set;
 public class ModuleExample extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
-    // 1. Cong tac Bat/Tat
     private final Setting<Boolean> active = sgGeneral.add(new BoolSetting.Builder()
         .name("active")
         .description("Kich hoat tu dong xa Spawner KingMC.")
@@ -24,7 +23,6 @@ public class ModuleExample extends Module {
         .build()
     );
 
-    // 2. Danh sach vat pham target
     private final Setting<String> targetItems = sgGeneral.add(new StringSetting.Builder()
         .name("target-items")
         .description("Vat pham xet duyet full trang (vi du: bone, iron_ingot).")
@@ -32,7 +30,6 @@ public class ModuleExample extends Module {
         .build()
     );
 
-    // 3. Time Delay (tick)
     private final Setting<Integer> delay = sgGeneral.add(new IntSetting.Builder()
         .name("delay-ticks")
         .description("Thoi gian hoan giua cac thao tac (tick).")
@@ -45,23 +42,23 @@ public class ModuleExample extends Module {
     private int timer = 0;
 
     public ModuleExample() {
-        // ĐÃ FIX L50: Trả lại AddonTemplate.CATEGORY chuẩn của project bạn
         super(AddonTemplate.CATEGORY, "spawner-dropper", "Tu dong Vut Het & Re-open Spawner khi Full 1 loai do.");
     }
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        // Dùng biến mc có sẵn của hệ thống Meteor Module
-        if (!active.get() || mc.player == null || mc.world == null) return;
+        // MOJMAP: Dung mc.level va mc.player chuan
+        if (!active.get() || mc.player == null || mc.level == null) return;
 
         if (timer > 0) {
             timer--;
             return;
         }
 
-        if (mc.currentScreen != null && mc.player.currentScreenHandler != null) {
-            var handler = mc.player.currentScreenHandler;
-            int totalSlots = handler.slots.size();
+        // MOJMAP: Dung mc.screen va mc.player.containerMenu
+        if (mc.screen != null && mc.player.containerMenu != null) {
+            var menu = mc.player.containerMenu;
+            int totalSlots = menu.slots.size();
 
             if (totalSlots > 36) {
                 int containerSlots = totalSlots - 36;
@@ -71,11 +68,11 @@ public class ModuleExample extends Module {
                 String[] targets = targetItems.get().toLowerCase().split(",");
 
                 for (int i = 0; i < containerSlots; i++) {
-                    var stack = handler.getSlot(i).getStack();
+                    // MOJMAP: getItem() thay vi getStack()
+                    var stack = menu.getSlot(i).getItem();
                     if (!stack.isEmpty()) {
                         String itemName = stack.getItem().toString().toLowerCase();
                         
-                        // Bo qua trang tri GUI
                         if (itemName.contains("glass") || itemName.contains("dispenser") || itemName.contains("emerald") || itemName.contains("arrow")) {
                             continue;
                         }
@@ -92,41 +89,38 @@ public class ModuleExample extends Module {
                     }
                 }
 
-                // Chi khi trang chua DUY NHAT 1 loai item thuoc Target
                 if (uniqueItemTypes.size() == 1 && containsTargetItem) {
                     int dropAllButtonSlot = 53;
                     
-                    if (dropAllButtonSlot < totalSlots) {
-                        // FIX LỖI IMPORT BẰNG REFLECTION THUẦN TÚY
+                    // MOJMAP: mc.gameMode thay vi interactionManager
+                    if (dropAllButtonSlot < totalSlots && mc.gameMode != null) {
                         try {
-                            var interactionManager = mc.interactionManager;
-                            if (interactionManager != null) {
-                                for (var method : interactionManager.getClass().getDeclaredMethods()) {
-                                    if (method.getParameterCount() == 5) {
-                                        method.setAccessible(true);
-                                        Object clickTypePickup = method.getParameterTypes()[3].getEnumConstants()[0];
-                                        method.invoke(interactionManager, handler.syncId, dropAllButtonSlot, 0, clickTypePickup, mc.player);
-                                        break;
-                                    }
+                            for (var method : mc.gameMode.getClass().getDeclaredMethods()) {
+                                if (method.getParameterCount() == 5) {
+                                    method.setAccessible(true);
+                                    Object clickTypePickup = method.getParameterTypes()[3].getEnumConstants()[0];
+                                    method.invoke(mc.gameMode, menu.containerId, dropAllButtonSlot, 0, clickTypePickup, mc.player);
+                                    break;
                                 }
                             }
                         } catch (Exception ignored) {}
                     }
 
-                    // Dong GUI
-                    mc.player.closeHandledScreen();
+                    // MOJMAP: closeContainer() thay vi closeHandledScreen()
+                    mc.player.closeContainer();
 
-                    // Mo lai Spawner
-                    if (mc.options != null && mc.options.useKey != null) {
-                        mc.options.useKey.setPressed(true);
+                    // MOJMAP: mc.options.keyUse.setDown(true) thay vi setPressed()
+                    if (mc.options != null && mc.options.keyUse != null) {
+                        mc.options.keyUse.setDown(true);
                     }
 
                     timer = delay.get();
                 }
             }
         } else {
-            if (mc.options != null && mc.options.useKey != null && mc.options.useKey.isPressed()) {
-                mc.options.useKey.setPressed(false);
+            // MOJMAP: keyUse.isDown() va keyUse.setDown(false)
+            if (mc.options != null && mc.options.keyUse != null && mc.options.keyUse.isDown()) {
+                mc.options.keyUse.setDown(false);
             }
         }
     }
